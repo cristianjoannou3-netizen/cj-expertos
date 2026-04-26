@@ -1,18 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import type { Rol } from '@/types/perfil'
 
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password']
-
-function getHomeByRol(rol: Rol): string {
-  switch (rol) {
-    case 'carpintero': return '/dashboard'
-    case 'proveedor':  return '/dashboard'
-    case 'admin':      return '/admin'
-    case 'cliente':
-    default:           return '/dashboard'
-  }
-}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -34,28 +23,25 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // IMPORTANT: do NOT remove this call — it refreshes the session cookie
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
   const isPublic = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
+  const isRoot = pathname === '/'
 
   // Sin sesión en ruta protegida → login
-  if (!user && !isPublic) {
+  if (!user && !isPublic && !isRoot) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Con sesión en ruta pública → redirigir al home del rol
+  // Con sesión en ruta pública → redirigir a /dashboard
+  // No hacemos query extra a DB — la página de dashboard se encarga de renderizar por rol
   if (user && isPublic) {
-    const { data: perfil } = await supabase
-      .from('perfiles')
-      .select('rol')
-      .eq('id', user.id)
-      .single()
-
     const url = request.nextUrl.clone()
-    url.pathname = perfil?.rol ? getHomeByRol(perfil.rol as Rol) : '/dashboard'
+    url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 

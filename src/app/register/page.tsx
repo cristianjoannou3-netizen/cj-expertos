@@ -116,7 +116,7 @@ export default function RegisterPage() {
           datos: { email, nombre: nombre.trim() },
         }),
       }).catch(() => null)
-      router.refresh()
+      router.push('/dashboard')
     }
   }
 

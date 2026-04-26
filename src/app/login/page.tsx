@@ -46,7 +46,7 @@ export default function LoginPage() {
       setError(getErrorMessage((err as { code?: string }).code, err.message))
       return
     }
-    router.refresh()
+    router.push('/dashboard')
   }
 
   return (

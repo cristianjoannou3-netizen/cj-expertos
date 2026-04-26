@@ -1,5 +1,5 @@
 import type { Rol } from '@/types/perfil'
-import { Home, Building2, Wallet, User, Gavel, PlusCircle, FileText, Map, Inbox, LayoutDashboard, Users, CreditCard, Percent, Calculator, Settings } from 'lucide-react'
+import { Home, Building2, Wallet, User, Gavel, PlusCircle, FileText, Map, Inbox, LayoutDashboard, Users, CreditCard, Percent, Settings } from 'lucide-react'
 
 interface NavItem {
   href: string
@@ -12,7 +12,6 @@ export const NAV_ITEMS_BY_ROL: Record<Rol, NavItem[]> = {
     { href: '/dashboard',    label: 'Inicio',       icon: Home },
     { href: '/licitaciones', label: 'Licitaciones', icon: Gavel },
     { href: '/obras',        label: 'Mis Obras',    icon: Building2 },
-    { href: '/calculador',   label: 'Calculador',   icon: Calculator },
     { href: '/billetera',    label: 'Billetera',    icon: Wallet },
     { href: '/perfil',       label: 'Perfil',       icon: User },
   ],

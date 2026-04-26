@@ -18,7 +18,6 @@ Plataforma web PWA para conectar propietarios con carpinteros de aluminio en Arg
 | `/carpinteros` | Marketplace publico de carpinteros con busqueda y filtros |
 | `/carpinteros/[id]` | Perfil publico de un carpintero: portfolio, ranking, resenas |
 | `/mapa` | Mapa interactivo con ubicacion de carpinteros disponibles |
-| `/calculador` | Calculador de materiales y presupuesto para ventanas de aluminio |
 | `/billetera` | Saldo del carpintero, historial de pagos y solicitudes de retiro |
 | `/perfil` | Edicion de perfil, certificaciones, foto y configuracion |
 | `/notificaciones` | Centro de notificaciones en tiempo real |
@@ -55,7 +54,6 @@ cj-expertos-next/
 │   │   ├── admin/      # Panel de administracion
 │   │   ├── api/        # Route handlers (pagos, push, email, webhooks)
 │   │   ├── billetera/  # Modulo de pagos del carpintero
-│   │   ├── calculador/ # Calculador de materiales
 │   │   ├── carpinteros/# Marketplace de carpinteros
 │   │   ├── dashboard/  # Dashboard principal
 │   │   ├── licitaciones/ # Modulo de licitaciones
@@ -68,8 +66,7 @@ cj-expertos-next/
 │   │   ├── supabase/   # Clientes Supabase (client, server, middleware)
 │   │   ├── mercadopago.ts
 │   │   ├── webpush.ts
-│   │   ├── email.ts
-│   │   └── calculador/ # Logica del calculador de materiales
+│   │   └── email.ts
 │   ├── types/          # Tipos TypeScript globales
 │   ├── middleware.ts    # Middleware de autenticacion Next.js
 │   └── sw.ts           # Service Worker (PWA + Push Notifications)

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, CheckCircle, Users, ArrowLeft, ArrowRight, Factory, Truck, Wrench } from 'lucide-react'
 import AppShell from '@/components/layout/AppShell'
@@ -30,7 +30,8 @@ interface FormData {
 export default function NuevaLicitacionPage() {
   const { profile, loading } = useUser()
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
 
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<FormData>({
@@ -48,6 +49,13 @@ export default function NuevaLicitacionPage() {
   const [error, setError] = useState('')
   const [licitacionCreada, setLicitacionCreada] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Role guard: redirect non-clients after loading completes
+  useEffect(() => {
+    if (!loading && (!profile || profile.rol !== 'cliente')) {
+      router.replace('/licitaciones')
+    }
+  }, [loading, profile, router])
 
   const canNext = [
     () => form.titulo.trim().length >= 3,
@@ -179,19 +187,13 @@ export default function NuevaLicitacionPage() {
     setCreando(false)
   }
 
-  // While loading: show a neutral spinner without any page title that could confuse
-  if (loading) {
+  // While loading or unauthorized: show spinner (useEffect handles redirect)
+  if (loading || !profile || profile.rol !== 'cliente') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
       </div>
     )
-  }
-
-  // Non-client users must not access this page — redirect immediately
-  if (!profile || profile.rol !== 'cliente') {
-    router.replace('/licitaciones')
-    return null
   }
 
   if (licitacionCreada) {

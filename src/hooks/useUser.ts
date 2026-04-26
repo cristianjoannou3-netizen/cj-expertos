@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import type { Perfil } from '@/types/perfil'
@@ -15,7 +15,6 @@ interface UseUserReturn {
 
 export function useUser(): UseUserReturn {
   const router = useRouter()
-  const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Perfil | null>(null)
   const [loading, setLoading] = useState(true)
@@ -39,34 +38,40 @@ export function useUser(): UseUserReturn {
     }
   }, [supabase])
 
-  // Re-verify session on every pathname change (catches browser back/forward)
+  // Fetch user & profile once on mount
   useEffect(() => {
     let mounted = true
-    setLoading(true)
 
     async function init() {
-      // Always call getUser() — never rely on cached session state
-      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
+      try {
+        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
 
-      if (!mounted) return
+        if (!mounted) return
 
-      if (userError || !currentUser) {
-        setUser(null)
-        setProfile(null)
-        setLoading(false)
-        return
+        if (userError || !currentUser) {
+          setUser(null)
+          setProfile(null)
+          setLoading(false)
+          return
+        }
+
+        setUser(currentUser)
+        await fetchProfile(currentUser.id)
+      } catch (err) {
+        if (mounted) {
+          setUser(null)
+          setProfile(null)
+          setError(err instanceof Error ? err.message : 'Error al verificar sesión')
+        }
+      } finally {
+        if (mounted) setLoading(false)
       }
-
-      setUser(currentUser)
-      await fetchProfile(currentUser.id)
-      if (mounted) setLoading(false)
     }
 
     init()
 
     return () => { mounted = false }
-  // pathname as dep ensures we re-check session when route changes (back/forward navigation)
-  }, [pathname, supabase, fetchProfile])
+  }, [supabase, fetchProfile])
 
   // Auth state change listener (handles login/logout events from other tabs or code)
   useEffect(() => {

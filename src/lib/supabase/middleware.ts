@@ -23,8 +23,15 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: do NOT remove this call — it refreshes the session cookie
-  const { data: { user } } = await supabase.auth.getUser()
+  // Refresh session — wrapped in try-catch so a Supabase outage never blocks navigation
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch {
+    // Supabase unreachable — let the request pass through; pages handle their own auth
+    return supabaseResponse
+  }
 
   const pathname = request.nextUrl.pathname
   const isPublic = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
@@ -38,7 +45,6 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Con sesión en ruta pública → redirigir a /dashboard
-  // No hacemos query extra a DB — la página de dashboard se encarga de renderizar por rol
   if (user && isPublic) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'

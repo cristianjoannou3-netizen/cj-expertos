@@ -21,7 +21,6 @@ export default function Sidebar({ perfil }: SidebarProps) {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
-    router.refresh()
   }
 
   return (

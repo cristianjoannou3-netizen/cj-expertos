@@ -4,7 +4,8 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'CJ Expertos',
   description: 'Plataforma de gestión para carpinteros de aluminio',
-  manifest: '/manifest.json',
+  // manifest disabled until Serwist supports Turbopack — see next.config.ts
+  // manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -35,7 +36,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="min-h-full bg-surface text-slate-900 antialiased">{children}</body>
+      <body className="min-h-full bg-surface text-slate-900 antialiased">
+        {children}
+        {/* Unregister stale Service Workers from previous Serwist builds */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if('serviceWorker' in navigator){
+                navigator.serviceWorker.getRegistrations().then(function(regs){
+                  regs.forEach(function(r){r.unregister()})
+                });
+                caches.keys().then(function(names){
+                  names.forEach(function(n){caches.delete(n)})
+                });
+              }
+            `,
+          }}
+        />
+      </body>
     </html>
   )
 }

@@ -93,7 +93,6 @@ export function useUser(): UseUserReturn {
     setUser(null)
     setProfile(null)
     router.push('/login')
-    router.refresh()
   }, [supabase, router])
 
   return { user, profile, loading, error, logout }

@@ -23,19 +23,26 @@ export function useUser(): UseUserReturn {
   const supabase = supabaseRef.current
 
   const fetchProfile = useCallback(async (userId: string): Promise<Perfil | null> => {
-    const { data, error: profileError } = await supabase
-      .from('perfiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (profileError) {
-      setError(profileError.message)
+    try {
+      const { data, error: profileError } = await supabase
+        .from('perfiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (profileError) {
+        setError(profileError.message)
+        return null
+      }
+      return data as Perfil
+    } catch {
       return null
     }
-    return data as Perfil
   }, [supabase])
 
   useEffect(() => {
+    // Safety timeout: if onAuthStateChange never resolves (network error), unblock the UI
+    const timeout = setTimeout(() => setLoading(false), 8000)
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'INITIAL_SESSION') {
@@ -43,30 +50,43 @@ export function useUser(): UseUserReturn {
             setUser(null)
             setProfile(null)
             setLoading(false)
+            clearTimeout(timeout)
             return
           }
-          setUser(session.user)
-          const perfil = await fetchProfile(session.user.id)
-          setProfile(perfil)
-          setLoading(false)
+          try {
+            setUser(session.user)
+            const perfil = await fetchProfile(session.user.id)
+            setProfile(perfil)
+          } finally {
+            setLoading(false)
+            clearTimeout(timeout)
+          }
           return
         }
         if (event === 'SIGNED_OUT') {
           setUser(null)
           setProfile(null)
           setLoading(false)
+          clearTimeout(timeout)
           return
         }
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
           if (!session?.user) return
-          setUser(session.user)
-          const perfil = await fetchProfile(session.user.id)
-          setProfile(perfil)
-          setLoading(false)
+          try {
+            setUser(session.user)
+            const perfil = await fetchProfile(session.user.id)
+            setProfile(perfil)
+          } finally {
+            setLoading(false)
+            clearTimeout(timeout)
+          }
         }
       }
     )
-    return () => { subscription.unsubscribe() }
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [supabase, fetchProfile])
 
   const logout = useCallback(async () => {

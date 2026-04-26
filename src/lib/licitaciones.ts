@@ -61,33 +61,52 @@ export async function getLicitacionesParaCarpintero(
   supabase: SupabaseClient
 ): Promise<(Licitacion & { cotizaciones_count: number })[]> {
   // Licitaciones abiertas donde fue invitado (por notificaciones) + donde ya cotizó
-  const { data: cotizadas } = await supabase
+  const { data: cotizadas, error: cotizadasErr } = await supabase
     .from('cotizaciones')
     .select('licitacion_id')
     .eq('carpintero_id', carpinteroId)
 
+  if (cotizadasErr) console.error('[getLicitacionesParaCarpintero] cotizaciones error:', cotizadasErr.message)
+
   const licitacionIdsCotzadas = (cotizadas ?? []).map((c: { licitacion_id: string }) => c.licitacion_id)
 
   // Todas las licitaciones abiertas visibles para carpinteros activos
-  const { data: abiertas } = await supabase
+  const { data: abiertas, error: abiertasErr } = await supabase
     .from('licitaciones')
-    .select('*, cotizaciones(count)')
+    .select('*')
     .eq('estado', 'abierta')
     .order('created_at', { ascending: false })
 
+  if (abiertasErr) console.error('[getLicitacionesParaCarpintero] abiertas error:', abiertasErr.message)
+
+  // Contar cotizaciones por licitación para las licitaciones abiertas
+  const abiertasIds = (abiertas ?? []).map((l: Licitacion) => l.id)
+  let cotizacionesCount: Record<string, number> = {}
+  if (abiertasIds.length > 0) {
+    const { data: counts } = await supabase
+      .from('cotizaciones')
+      .select('licitacion_id')
+      .in('licitacion_id', abiertasIds)
+    if (counts) {
+      for (const c of counts as { licitacion_id: string }[]) {
+        cotizacionesCount[c.licitacion_id] = (cotizacionesCount[c.licitacion_id] ?? 0) + 1
+      }
+    }
+  }
+
   // Licitaciones donde ya cotizó (cualquier estado)
-  let cotizadasData: (Licitacion & { cotizaciones: { count: number }[] })[] = []
+  let cotizadasData: Licitacion[] = []
   if (licitacionIdsCotzadas.length > 0) {
     const { data } = await supabase
       .from('licitaciones')
-      .select('*, cotizaciones(count)')
+      .select('*')
       .in('id', licitacionIdsCotzadas)
       .neq('estado', 'abierta')
       .order('created_at', { ascending: false })
     cotizadasData = data ?? []
   }
 
-  const todasAbiertas = (abiertas ?? []) as (Licitacion & { cotizaciones: { count: number }[] })[]
+  const todasAbiertas = (abiertas ?? []) as Licitacion[]
   const todas = [...todasAbiertas, ...cotizadasData]
 
   // Deduplicar
@@ -100,7 +119,7 @@ export async function getLicitacionesParaCarpintero(
 
   return unique.map(l => ({
     ...l,
-    cotizaciones_count: l.cotizaciones?.[0]?.count ?? 0,
+    cotizaciones_count: cotizacionesCount[l.id] ?? 0,
   }))
 }
 

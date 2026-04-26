@@ -189,6 +189,11 @@ export default function NuevaLicitacionPage() {
     )
   }
 
+  if (profile && profile.rol !== 'cliente') {
+    router.replace('/licitaciones')
+    return null
+  }
+
   if (licitacionCreada) {
     return (
       <AppShell perfil={profile} pageTitle="Nueva Licitación">

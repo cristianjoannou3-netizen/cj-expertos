@@ -166,7 +166,7 @@ export default function EditarPerfilForm({ perfil, userId }: Props) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {[
           { label: 'Nombre *', value: nombre, set: setNombre, placeholder: 'Juan García' },
-          { label: 'Taller / Empresa', value: empresa, set: setEmpresa, placeholder: 'García Aberturas' },
+          ...(isCarpintero ? [{ label: 'Taller / Empresa', value: empresa, set: setEmpresa, placeholder: 'García Aberturas' }] : []),
           { label: 'Teléfono', value: telefono, set: setTelefono, placeholder: '341 555-0000' },
           { label: 'Ciudad', value: ciudad, set: setCiudad, placeholder: 'Rosario' },
           { label: 'Provincia', value: provincia, set: setProvincia, placeholder: 'Santa Fe' },
@@ -182,19 +182,21 @@ export default function EditarPerfilForm({ perfil, userId }: Props) {
         ))}
       </div>
 
-      {/* Bio */}
-      <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1">Biografía</label>
-        <textarea
-          value={bio}
-          onChange={e => setBio(e.target.value)}
-          rows={3}
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-slate-800 resize-none"
-          placeholder="Contá tu experiencia, especialidades, zona de trabajo..."
-          maxLength={500}
-        />
-        <p className="text-xs text-slate-400 mt-1 text-right">{bio.length}/500</p>
-      </div>
+      {/* Bio — solo carpinteros */}
+      {isCarpintero && (
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-1">Biografía</label>
+          <textarea
+            value={bio}
+            onChange={e => setBio(e.target.value)}
+            rows={3}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-slate-800 resize-none"
+            placeholder="Contá tu experiencia, especialidades, zona de trabajo..."
+            maxLength={500}
+          />
+          <p className="text-xs text-slate-400 mt-1 text-right">{bio.length}/500</p>
+        </div>
+      )}
 
       {/* Campos exclusivos carpintero */}
       {isCarpintero && (

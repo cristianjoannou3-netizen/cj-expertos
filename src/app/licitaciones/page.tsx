@@ -82,15 +82,14 @@ export default async function LicitacionesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  // Perfil y notificaciones en paralelo
+  const [perfilRes, notifCount] = await Promise.all([
+    supabase.from('perfiles').select('*').eq('id', user.id).single(),
+    contarNotificacionesNoLeidas(user.id, supabase),
+  ])
+  const perfil = perfilRes.data as Perfil | null
 
-  const notifCount = await contarNotificacionesNoLeidas(user.id, supabase)
-
-  const rol = (perfil as Perfil | null)?.rol ?? 'carpintero'
+  const rol = perfil?.rol ?? 'carpintero'
 
   let licitaciones: (Licitacion & { cotizaciones_count: number })[] = []
 
@@ -105,7 +104,7 @@ export default async function LicitacionesPage() {
   const historial = licitaciones.filter(l => ['completada', 'vencida', 'cancelada'].includes(l.estado))
 
   return (
-    <AppShell perfil={perfil as Perfil | null} pageTitle="Licitaciones" notifCount={notifCount}>
+    <AppShell perfil={perfil} pageTitle="Licitaciones" notifCount={notifCount}>
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">

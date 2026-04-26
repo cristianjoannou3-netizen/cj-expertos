@@ -38,7 +38,7 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-lg sm:text-xl text-slate-300 mb-10 max-w-2xl leading-relaxed">
-          Gestioná obras, calculá sobrantes de acopio, hacé seguimiento por etapas
+          Gestioná obras, hacé seguimiento por etapas
           y cobrá desde el celular. Todo en un solo lugar, sin papeles.
         </p>
 
@@ -63,8 +63,8 @@ export default function LandingPage() {
             },
             {
               icon: '💰',
-              title: 'Calculá el sobrante',
-              desc: 'Ingresá el acopio y los costos reales. CJ calcula el sobrante al instante.',
+              title: 'Control financiero',
+              desc: 'Seguí el presupuesto, acopio cobrado y costos de cada obra en tiempo real.',
             },
             {
               icon: '📱',

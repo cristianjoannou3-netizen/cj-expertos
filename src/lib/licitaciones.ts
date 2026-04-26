@@ -60,64 +60,65 @@ export async function getLicitacionesParaCarpintero(
   carpinteroId: string,
   supabase: SupabaseClient
 ): Promise<(Licitacion & { cotizaciones_count: number })[]> {
-  // Licitaciones abiertas donde fue invitado (por notificaciones) + donde ya cotizó
-  const { data: cotizadas, error: cotizadasErr } = await supabase
-    .from('cotizaciones')
-    .select('licitacion_id')
-    .eq('carpintero_id', carpinteroId)
-
-  if (cotizadasErr) console.error('[getLicitacionesParaCarpintero] cotizaciones error:', cotizadasErr.message)
-
-  const licitacionIdsCotzadas = (cotizadas ?? []).map((c: { licitacion_id: string }) => c.licitacion_id)
-
-  // Todas las licitaciones abiertas visibles para carpinteros activos
-  const { data: abiertas, error: abiertasErr } = await supabase
-    .from('licitaciones')
-    .select('*')
-    .eq('estado', 'abierta')
-    .order('created_at', { ascending: false })
-
-  if (abiertasErr) console.error('[getLicitacionesParaCarpintero] abiertas error:', abiertasErr.message)
-
-  // Contar cotizaciones por licitación para las licitaciones abiertas
-  const abiertasIds = (abiertas ?? []).map((l: Licitacion) => l.id)
-  let cotizacionesCount: Record<string, number> = {}
-  if (abiertasIds.length > 0) {
-    const { data: counts } = await supabase
+  // Lanzar en paralelo: licitaciones abiertas + IDs donde el carpintero ya cotizó
+  const [abiertasRes, cotizadasRes] = await Promise.all([
+    supabase
+      .from('licitaciones')
+      .select('id, titulo, estado, tipo_servicio, created_at, cliente_id, vence_en')
+      .eq('estado', 'abierta')
+      .order('created_at', { ascending: false }),
+    supabase
       .from('cotizaciones')
       .select('licitacion_id')
-      .in('licitacion_id', abiertasIds)
-    if (counts) {
-      for (const c of counts as { licitacion_id: string }[]) {
-        cotizacionesCount[c.licitacion_id] = (cotizacionesCount[c.licitacion_id] ?? 0) + 1
-      }
-    }
+      .eq('carpintero_id', carpinteroId),
+  ])
+
+  const abiertas = (abiertasRes.data ?? []) as Licitacion[]
+  const licitacionIdsCotzadas = (cotizadasRes.data ?? []).map(
+    (c: { licitacion_id: string }) => c.licitacion_id
+  )
+
+  // IDs de abiertas donde el carpintero NO cotizó aún (para el count de cotizaciones)
+  const abiertasIds = abiertas.map((l) => l.id)
+
+  // Lanzar en paralelo: contar cotizaciones en abiertas + traer licitaciones no-abiertas donde cotizó
+  const idsNoAbiertas = licitacionIdsCotzadas.filter(
+    (id) => !abiertasIds.includes(id)
+  )
+
+  const [countsRes, cotizadasDataRes] = await Promise.all([
+    abiertasIds.length > 0
+      ? supabase
+          .from('cotizaciones')
+          .select('licitacion_id')
+          .in('licitacion_id', abiertasIds)
+      : Promise.resolve({ data: [] }),
+    idsNoAbiertas.length > 0
+      ? supabase
+          .from('licitaciones')
+          .select('id, titulo, estado, tipo_servicio, created_at, cliente_id, vence_en')
+          .in('id', idsNoAbiertas)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ])
+
+  const cotizacionesCount: Record<string, number> = {}
+  for (const c of (countsRes.data ?? []) as { licitacion_id: string }[]) {
+    cotizacionesCount[c.licitacion_id] = (cotizacionesCount[c.licitacion_id] ?? 0) + 1
   }
 
-  // Licitaciones donde ya cotizó (cualquier estado)
-  let cotizadasData: Licitacion[] = []
-  if (licitacionIdsCotzadas.length > 0) {
-    const { data } = await supabase
-      .from('licitaciones')
-      .select('*')
-      .in('id', licitacionIdsCotzadas)
-      .neq('estado', 'abierta')
-      .order('created_at', { ascending: false })
-    cotizadasData = data ?? []
-  }
+  const cotizadasData = (cotizadasDataRes.data ?? []) as Licitacion[]
+  const todas = [...abiertas, ...cotizadasData]
 
-  const todasAbiertas = (abiertas ?? []) as Licitacion[]
-  const todas = [...todasAbiertas, ...cotizadasData]
-
-  // Deduplicar
+  // Deduplicar (por si acaso)
   const seen = new Set<string>()
-  const unique = todas.filter(l => {
+  const unique = todas.filter((l) => {
     if (seen.has(l.id)) return false
     seen.add(l.id)
     return true
   })
 
-  return unique.map(l => ({
+  return unique.map((l) => ({
     ...l,
     cotizaciones_count: cotizacionesCount[l.id] ?? 0,
   }))

@@ -50,12 +50,9 @@ export default function NuevaLicitacionPage() {
   const [licitacionCreada, setLicitacionCreada] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // FIX: Solo redirigimos cuando loading=false Y tenemos certeza de que
-  // el usuario no es cliente. Nunca redirigimos si profile es null durante carga.
   useEffect(() => {
-    if (loading) return // Esperar a que termine de cargar
+    if (loading) return
     if (!profile) {
-      // Sin perfil después de cargar = no autenticado
       router.replace('/login')
       return
     }
@@ -185,7 +182,6 @@ export default function NuevaLicitacionPage() {
     setCreando(false)
   }
 
-  // FIX: Spinner mientras carga - nunca infinito
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -194,7 +190,6 @@ export default function NuevaLicitacionPage() {
     )
   }
 
-  // Si no es cliente, el useEffect ya redirige
   if (!profile || profile.rol !== 'cliente') {
     return null
   }
@@ -231,16 +226,13 @@ export default function NuevaLicitacionPage() {
   return (
     <AppShell perfil={profile} pageTitle="Nueva Licitacion">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Steps indicator */}
         <div className="flex items-center gap-0">
           {STEPS.map((label, idx) => (
             <div key={idx} className="flex items-center flex-1">
               <div className="flex flex-col items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                  idx < step
-                    ? 'bg-[var(--success)] text-white'
-                    : idx === step
-                    ? 'bg-[var(--primary)] text-white'
+                  idx < step ? 'bg-[var(--success)] text-white'
+                    : idx === step ? 'bg-[var(--primary)] text-white'
                     : 'bg-slate-100 text-slate-400'
                 }`}>
                   {idx < step ? <CheckCircle size={14} /> : idx + 1}
@@ -260,47 +252,20 @@ export default function NuevaLicitacionPage() {
           <p className="text-sm text-[var(--danger)] bg-red-50 rounded-xl px-4 py-3">{error}</p>
         )}
 
-        {/* Step 0: Datos */}
         {step === 0 && (
           <Card>
-            <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">
-              Datos de la obra
-            </h2>
+            <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">Datos de la obra</h2>
             <div className="space-y-4">
-              <Input
-                label="Titulo *"
-                value={form.titulo}
-                onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
-                placeholder="Ej: Ventanas edificio 3er piso — 12 unidades"
-              />
+              <Input label="Titulo *" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} placeholder="Ej: Ventanas edificio 3er piso — 12 unidades" />
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                  Descripcion / especificaciones
-                </label>
-                <textarea
-                  value={form.descripcion}
-                  onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
-                  rows={4}
-                  className="w-full bg-[var(--surface)] border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)] resize-none transition-all"
-                  placeholder="Tipo de aberturas, materiales, plazos, condiciones especiales..."
-                />
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Descripcion / especificaciones</label>
+                <textarea value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))} rows={4} className="w-full bg-[var(--surface)] border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)] resize-none transition-all" placeholder="Tipo de aberturas, materiales, plazos, condiciones especiales..." />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                  Tipo de servicio *
-                </label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tipo de servicio *</label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {TIPO_SERVICIO.map(op => (
-                    <button
-                      key={op.value}
-                      type="button"
-                      onClick={() => setForm(f => ({ ...f, tipoServicio: op.value }))}
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
-                        form.tipoServicio === op.value
-                          ? 'border-[var(--primary)] bg-[var(--surface)]'
-                          : 'border-slate-100 hover:border-slate-200'
-                      }`}
-                    >
+                    <button key={op.value} type="button" onClick={() => setForm(f => ({ ...f, tipoServicio: op.value }))} className={`p-4 rounded-xl border-2 text-left transition-all ${form.tipoServicio === op.value ? 'border-[var(--primary)] bg-[var(--surface)]' : 'border-slate-100 hover:border-slate-200'}`}>
                       <op.Icon size={18} className={form.tipoServicio === op.value ? 'text-[var(--primary)] mb-2' : 'text-slate-300 mb-2'} />
                       <p className="text-sm font-bold text-slate-800">{op.label}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{op.desc}</p>
@@ -312,165 +277,75 @@ export default function NuevaLicitacionPage() {
           </Card>
         )}
 
-        {/* Step 1: Plano */}
         {step === 1 && (
           <Card>
-            <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">
-              Plano de la obra
-            </h2>
+            <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">Plano de la obra</h2>
             {form.planoUrl ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
                   <CheckCircle size={18} className="text-[var(--success)] shrink-0" />
                   <span className="text-sm text-green-700 font-medium flex-1 truncate">{form.planoNombre}</span>
-                  <button
-                    onClick={() => setForm(f => ({ ...f, planoUrl: '', planoNombre: '' }))}
-                    className="text-xs text-slate-400 hover:text-[var(--danger)] font-medium transition-colors"
-                  >
-                    Cambiar
-                  </button>
+                  <button onClick={() => setForm(f => ({ ...f, planoUrl: '', planoNombre: '' }))} className="text-xs text-slate-400 hover:text-[var(--danger)] font-medium transition-colors">Cambiar</button>
                 </div>
-                <img
-                  src={form.planoUrl}
-                  alt="Plano"
-                  className="w-full max-h-64 object-contain rounded-xl bg-slate-50 border border-slate-100"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                />
+                <img src={form.planoUrl} alt="Plano" className="w-full max-h-64 object-contain rounded-xl bg-slate-50 border border-slate-100" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
               </div>
             ) : (
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="w-full h-40 border-2 border-dashed border-[var(--primary)]/40 rounded-xl flex flex-col items-center justify-center gap-2 text-[var(--primary)] hover:bg-[var(--primary)]/5 transition-all disabled:opacity-50"
-              >
-                {uploading ? (
-                  <>
-                    <div className="w-6 h-6 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm font-semibold">Subiendo...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload size={24} />
-                    <span className="text-sm font-semibold">Subir plano</span>
-                    <span className="text-xs text-slate-400">JPG, PNG o PDF — max. 5MB</span>
-                  </>
-                )}
+              <button onClick={() => fileRef.current?.click()} disabled={uploading} className="w-full h-40 border-2 border-dashed border-[var(--primary)]/40 rounded-xl flex flex-col items-center justify-center gap-2 text-[var(--primary)] hover:bg-[var(--primary)]/5 transition-all disabled:opacity-50">
+                {uploading ? (<><div className="w-6 h-6 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" /><span className="text-sm font-semibold">Subiendo...</span></>) : (<><Upload size={24} /><span className="text-sm font-semibold">Subir plano</span><span className="text-xs text-slate-400">JPG, PNG o PDF — max. 5MB</span></>)}
               </button>
             )}
             <input ref={fileRef} type="file" accept="image/*,.pdf" onChange={handlePlano} className="hidden" />
           </Card>
         )}
 
-        {/* Step 2: Carpinteros */}
         {step === 2 && (
           <Card>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center gap-2">
-                <Users size={15} /> Invitar carpinteros
-              </h2>
-              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                form.carpinterosSeleccionados.length >= 1
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-slate-100 text-slate-500'
-              }`}>
-                {form.carpinterosSeleccionados.length} seleccionado(s)
-              </span>
+              <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center gap-2"><Users size={15} /> Invitar carpinteros</h2>
+              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${form.carpinterosSeleccionados.length >= 1 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{form.carpinterosSeleccionados.length} seleccionado(s)</span>
             </div>
             {loadingCarpinteros ? (
               <p className="text-slate-400 text-sm text-center py-8">Cargando carpinteros...</p>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                 {carpinteros.map(c => (
-                  <label
-                    key={c.id}
-                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
-                      form.carpinterosSeleccionados.includes(c.id)
-                        ? 'border-[var(--primary)] bg-[var(--surface)]'
-                        : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.carpinterosSeleccionados.includes(c.id)}
-                      onChange={() => toggleCarpintero(c.id)}
-                      className="w-4 h-4 accent-[var(--primary)]"
-                    />
-                    <div className="w-9 h-9 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] font-bold text-sm shrink-0">
-                      {c.nombre.charAt(0)}
-                    </div>
+                  <label key={c.id} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${form.carpinterosSeleccionados.includes(c.id) ? 'border-[var(--primary)] bg-[var(--surface)]' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'}`}>
+                    <input type="checkbox" checked={form.carpinterosSeleccionados.includes(c.id)} onChange={() => toggleCarpintero(c.id)} className="w-4 h-4 accent-[var(--primary)]" />
+                    <div className="w-9 h-9 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] font-bold text-sm shrink-0">{c.nombre.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-semibold text-slate-800 truncate">{c.nombre}</p>
-                        {c.verificado && (
-                          <span className="text-xs text-[var(--primary)] bg-[var(--surface)] border border-sky-100 px-1.5 rounded-full shrink-0">V</span>
-                        )}
+                        {c.verificado && <span className="text-xs text-[var(--primary)] bg-[var(--surface)] border border-sky-100 px-1.5 rounded-full shrink-0">V</span>}
                       </div>
-                      <p className="text-xs text-slate-400">
-                        {c.ciudad && `${c.ciudad} · `}
-                        {c.m2_taller && `${c.m2_taller}m2 · `}
-                        {c.experiencia && `${c.experiencia} años exp.`}
-                      </p>
+                      <p className="text-xs text-slate-400">{c.ciudad && `${c.ciudad} · `}{c.m2_taller && `${c.m2_taller}m2 · `}{c.experiencia && `${c.experiencia} años exp.`}</p>
                     </div>
                   </label>
                 ))}
-                {carpinteros.length === 0 && (
-                  <p className="text-slate-400 text-sm text-center py-8">No hay carpinteros activos disponibles</p>
-                )}
+                {carpinteros.length === 0 && <p className="text-slate-400 text-sm text-center py-8">No hay carpinteros activos disponibles</p>}
               </div>
             )}
           </Card>
         )}
 
-        {/* Step 3: Confirmar */}
         {step === 3 && (
           <Card>
-            <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">
-              Confirmar licitacion
-            </h2>
+            <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">Confirmar licitacion</h2>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between border-b border-slate-100 pb-3">
-                <span className="text-slate-500">Titulo</span>
-                <span className="font-semibold text-slate-800 text-right max-w-[60%]">{form.titulo}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-100 pb-3">
-                <span className="text-slate-500">Tipo de servicio</span>
-                <span className="font-semibold text-slate-800">
-                  {TIPO_SERVICIO.find(t => t.value === form.tipoServicio)?.label}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-slate-100 pb-3">
-                <span className="text-slate-500">Plano</span>
-                <span className="font-semibold text-[var(--success)] flex items-center gap-1">
-                  <CheckCircle size={13} /> {form.planoNombre || 'Adjunto'}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-slate-100 pb-3">
-                <span className="text-slate-500">Carpinteros invitados</span>
-                <span className="font-semibold text-slate-800">{form.carpinterosSeleccionados.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Vencimiento</span>
-                <span className="font-semibold text-slate-800">48 horas desde ahora</span>
-              </div>
+              <div className="flex justify-between border-b border-slate-100 pb-3"><span className="text-slate-500">Titulo</span><span className="font-semibold text-slate-800 text-right max-w-[60%]">{form.titulo}</span></div>
+              <div className="flex justify-between border-b border-slate-100 pb-3"><span className="text-slate-500">Tipo de servicio</span><span className="font-semibold text-slate-800">{TIPO_SERVICIO.find(t => t.value === form.tipoServicio)?.label}</span></div>
+              <div className="flex justify-between border-b border-slate-100 pb-3"><span className="text-slate-500">Plano</span><span className="font-semibold text-[var(--success)] flex items-center gap-1"><CheckCircle size={13} /> {form.planoNombre || 'Adjunto'}</span></div>
+              <div className="flex justify-between border-b border-slate-100 pb-3"><span className="text-slate-500">Carpinteros invitados</span><span className="font-semibold text-slate-800">{form.carpinterosSeleccionados.length}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Vencimiento</span><span className="font-semibold text-slate-800">48 horas desde ahora</span></div>
             </div>
           </Card>
         )}
 
-        {/* Navigation */}
         <div className="flex justify-between items-center">
-          {step > 0 ? (
-            <Button variant="outline" onClick={handleBack}>
-              <ArrowLeft size={15} /> Anterior
-            </Button>
-          ) : <div />}
+          {step > 0 ? <Button variant="outline" onClick={handleBack}><ArrowLeft size={15} /> Anterior</Button> : <div />}
           {step < STEPS.length - 1 ? (
-            <Button onClick={handleNext} disabled={!canNext[step]()}>
-              Siguiente <ArrowRight size={15} />
-            </Button>
+            <Button onClick={handleNext} disabled={!canNext[step]()}>Siguiente <ArrowRight size={15} /></Button>
           ) : (
-            <Button onClick={handleCrear} loading={creando}>
-              Publicar licitacion
-            </Button>
+            <Button onClick={handleCrear} loading={creando}>Publicar licitacion</Button>
           )}
         </div>
       </div>

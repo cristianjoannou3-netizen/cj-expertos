@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+/* =============================================
+   CJ Expertos — Paleta de colores
+   ============================================= */
+:root {
+  /* Marca */
+  --primary:       #0f2940;
+  --primary-mid:   #1a4a6b;
+  --accent:        #2a7a92;
+  --accent-light:  #7EC8E3;
+
+  /* Superficies */
+  --surface:       #F0F4F8;
+  --card:          #ffffff;
+
+  /* Semánticos */
+  --danger:        #dc2626;
+  --warning:       #f59e0b;
+  --success:       #16a34a;
+
+  /* Heredados */
+  --background:    var(--surface);
+  --foreground:    #0f172a;
+}
+
+/* Tailwind v4: extensión de colores via @theme */
+@theme {
+  --color-primary:       var(--primary);
+  --color-primary-mid:   var(--primary-mid);
+  --color-accent:        var(--accent);
+  --color-accent-light:  var(--accent-light);
+  --color-surface:       var(--surface);
+  --color-card:          var(--card);
+  --color-danger:        var(--danger);
+  --color-warning:       var(--warning);
+  --color-success:       var(--success);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Safe area para devices con notch (iPhone, etc.) */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Tap highlight removal en mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Input type number sin flechas */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Scrollbar minimalista */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+/* =============================================
+   Animaciones globales
+   ============================================= */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.35s ease-out both;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Transición consistente en links del sidebar y nav */
+.nav-item {
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+/* Hover effect uniforme para cards */
+.card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-hover:hover {
+  box-shadow: 0 4px 24px 0 rgba(15,41,64,0.10);
+  transform: translateY(-1px);
+}
+

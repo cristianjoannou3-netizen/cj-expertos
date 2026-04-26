@@ -1,0 +1,1279 @@
+CJ EXPERTOS — EXPORTACIÓN COMPLETA DEL PROYECTO
+================================================
+Generado: 2026-03-26
+Stack: Next.js 16 + Tailwind 4 + Supabase
+Compilación TypeScript: 0 errores
+================================================
+
+INSTRUCCIONES DE USO
+--------------------
+1. Crear carpeta "cj-expertos-next" vacía
+2. Copiar cada archivo en su ruta indicada
+3. Crear .env.local con tus credenciales de Supabase
+4. npm install
+5. Ejecutar supabase_schema.sql en Supabase SQL Editor
+6. Crear bucket "fotos-obra" en Supabase Storage (Public: ON)
+7. npm run dev → http://localhost:3000
+
+
+================================================================================
+FILE: package.json
+================================================================================
+{
+  "name": "cj-expertos-next",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.100.1",
+    "lucide-react": "^1.7.0",
+    "next": "16.2.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+
+================================================================================
+FILE: .env.local   ← CREAR MANUALMENTE (no se puede exportar por seguridad)
+================================================================================
+NEXT_PUBLIC_SUPABASE_URL=https://TU_PROYECTO.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=TU_ANON_KEY_AQUI
+
+================================================================================
+FILE: tsconfig.json
+================================================================================
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["next-env.d.ts","**/*.ts","**/*.tsx",".next/types/**/*.ts",".next/dev/types/**/*.ts","**/*.mts"],
+  "exclude": ["node_modules"]
+}
+
+================================================================================
+FILE: next.config.ts
+================================================================================
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
+};
+
+export default nextConfig;
+
+================================================================================
+FILE: postcss.config.mjs
+================================================================================
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+
+================================================================================
+FILE: src/middleware.ts
+================================================================================
+import { type NextRequest } from 'next/server'
+import { updateSession } from '@/lib/supabase/middleware'
+
+export async function middleware(request: NextRequest) {
+  return await updateSession(request)
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+}
+
+================================================================================
+FILE: src/app/layout.tsx
+================================================================================
+import type { Metadata } from 'next'
+import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'CJ Expertos',
+  description: 'Plataforma de carpintería de aluminio',
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="es" className="h-full">
+      <body className="min-h-full bg-slate-50 text-slate-900 antialiased">{children}</body>
+    </html>
+  )
+}
+
+================================================================================
+FILE: src/app/globals.css
+================================================================================
+@import "tailwindcss";
+
+================================================================================
+FILE: src/app/page.tsx
+================================================================================
+import { redirect } from 'next/navigation'
+
+export default function Home() {
+  redirect('/login')
+}
+
+================================================================================
+FILE: src/app/login/page.tsx
+================================================================================
+'use client'
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+export default function LoginPage() {
+  const router = useRouter()
+  const supabase = createClient()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    if (!email || !password) { setError('Completá todos los campos.'); return }
+    setLoading(true)
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+    setLoading(false)
+    if (err) { setError('Email o contraseña incorrectos.'); return }
+    router.push('/dashboard')
+    router.refresh()
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-blue-950 px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
+            <span className="text-white font-black text-2xl">CJ</span>
+          </div>
+          <h1 className="text-3xl font-black text-white tracking-tight">CJ Expertos</h1>
+          <p className="text-blue-300 mt-1 text-sm">Plataforma de carpintería de aluminio</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <h2 className="text-xl font-bold text-slate-800 mb-6">Iniciar sesión</h2>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+          )}
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 bg-slate-50"
+                placeholder="tu@email.com" autoComplete="email" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Contraseña</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 bg-slate-50"
+                placeholder="••••••••" autoComplete="current-password" />
+            </div>
+            <button type="submit" disabled={loading}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl transition-colors shadow-sm">
+              {loading ? 'Entrando...' : 'Ingresar'}
+            </button>
+          </form>
+          <p className="text-center text-sm text-slate-500 mt-6">
+            ¿No tenés cuenta?{' '}
+            <Link href="/register" className="text-blue-600 font-semibold hover:underline">Registrate gratis</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+================================================================================
+FILE: src/app/register/page.tsx
+================================================================================
+'use client'
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+export default function RegisterPage() {
+  const router = useRouter()
+  const supabase = createClient()
+  const [nombre, setNombre] = useState('')
+  const [empresa, setEmpresa] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    if (!nombre || !email || !password) { setError('Nombre, email y contraseña son obligatorios.'); return }
+    if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return }
+    setLoading(true)
+    const { data, error: err } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { nombre, empresa } },
+    })
+    setLoading(false)
+    if (err) { setError(err.message); return }
+    if (data.user) {
+      await supabase.from('perfiles').upsert({ id: data.user.id, nombre, empresa: empresa || null, email })
+      router.push('/dashboard')
+      router.refresh()
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-blue-950 px-4 py-10">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
+            <span className="text-white font-black text-2xl">CJ</span>
+          </div>
+          <h1 className="text-3xl font-black text-white tracking-tight">CJ Expertos</h1>
+          <p className="text-blue-300 mt-1 text-sm">Creá tu cuenta de carpintero</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <h2 className="text-xl font-bold text-slate-800 mb-6">Crear cuenta</h2>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+          )}
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Nombre completo *</label>
+              <input type="text" value={nombre} onChange={e => setNombre(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 bg-slate-50"
+                placeholder="Juan García" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Taller / Empresa</label>
+              <input type="text" value={empresa} onChange={e => setEmpresa(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 bg-slate-50"
+                placeholder="García Aberturas" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Email *</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 bg-slate-50"
+                placeholder="tu@email.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Contraseña * (mín. 6 caracteres)</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 bg-slate-50"
+                placeholder="••••••••" />
+            </div>
+            <button type="submit" disabled={loading}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl transition-colors shadow-sm">
+              {loading ? 'Registrando...' : 'Crear cuenta gratis'}
+            </button>
+          </form>
+          <p className="text-center text-sm text-slate-500 mt-6">
+            ¿Ya tenés cuenta?{' '}
+            <Link href="/login" className="text-blue-600 font-semibold hover:underline">Iniciar sesión</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+================================================================================
+FILE: src/app/dashboard/page.tsx
+================================================================================
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import LogoutButton from '@/components/LogoutButton'
+import RangoBadge from '@/components/RangoBadge'
+
+export default async function DashboardPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: perfil } = await supabase.from('perfiles').select('*').eq('id', user.id).single()
+  const { data: obras } = await supabase
+    .from('obras')
+    .select('id, titulo, estado, cliente_nombre, created_at, monto_presupuestado')
+    .eq('carpintero_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  const estadoColor: Record<string, string> = {
+    borrador:'bg-slate-100 text-slate-600', cotizacion:'bg-yellow-100 text-yellow-700',
+    acopio:'bg-orange-100 text-orange-700', fabricacion:'bg-blue-100 text-blue-700',
+    entrega:'bg-purple-100 text-purple-700', colocacion:'bg-indigo-100 text-indigo-700',
+    finalizada:'bg-green-100 text-green-700', cancelada:'bg-red-100 text-red-700',
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+              <span className="text-white font-black text-lg">CJ</span>
+            </div>
+            <div>
+              <span className="font-black text-slate-800 text-lg">CJ Expertos</span>
+              <p className="text-xs text-slate-400 leading-none">Panel del carpintero</p>
+            </div>
+          </div>
+          <LogoutButton />
+        </div>
+      </header>
+      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <h2 className="text-2xl font-black text-slate-800">{perfil?.nombre || user.email}</h2>
+                <RangoBadge rango={perfil?.rango || 'estrella_1'} />
+              </div>
+              {perfil?.empresa && <p className="text-slate-500 text-sm">{perfil.empresa}</p>}
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-3 text-center">
+              <p className="text-xs font-semibold text-green-600 uppercase tracking-wide">Saldo billetera</p>
+              <p className="text-2xl font-black text-green-700">${(perfil?.saldo_billetera || 0).toLocaleString('es-AR')}</p>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Total obras', value: obras?.length ?? 0, color: 'text-blue-600' },
+            { label: 'En fabricación', value: obras?.filter(o => o.estado === 'fabricacion').length ?? 0, color: 'text-indigo-600' },
+            { label: 'Finalizadas', value: obras?.filter(o => o.estado === 'finalizada').length ?? 0, color: 'text-green-600' },
+            { label: 'Puntos', value: perfil?.puntos ?? 0, color: 'text-yellow-600' },
+          ].map((m, i) => (
+            <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 text-center shadow-sm">
+              <p className={`text-2xl font-black ${m.color}`}>{m.value}</p>
+              <p className="text-xs text-slate-500 mt-1">{m.label}</p>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/obras/nueva" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow-sm transition-colors">+ Nueva obra</Link>
+          <Link href="/obras" className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold px-6 py-3 rounded-xl border border-slate-200 shadow-sm transition-colors">Ver todas las obras</Link>
+          <Link href="/perfil" className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold px-6 py-3 rounded-xl border border-slate-200 shadow-sm transition-colors">Mi perfil</Link>
+        </div>
+        <div>
+          <h3 className="text-lg font-bold text-slate-700 mb-3">Obras recientes</h3>
+          {!obras || obras.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+              <p className="text-slate-400 text-lg mb-4">Todavía no cargaste obras</p>
+              <Link href="/obras/nueva" className="inline-block bg-blue-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors">Crear primera obra</Link>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              {obras.map((obra, i) => (
+                <Link key={obra.id} href={`/obras/${obra.id}`}
+                  className={`flex items-center justify-between p-4 hover:bg-slate-50 transition-colors ${i !== 0 ? 'border-t border-slate-100' : ''}`}>
+                  <div>
+                    <p className="font-bold text-slate-800">{obra.titulo}</p>
+                    <p className="text-sm text-slate-400">{obra.cliente_nombre || 'Sin cliente'} · {new Date(obra.created_at).toLocaleDateString('es-AR')}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {obra.monto_presupuestado > 0 && <span className="text-sm font-bold text-slate-600">${obra.monto_presupuestado.toLocaleString('es-AR')}</span>}
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${estadoColor[obra.estado] || 'bg-slate-100 text-slate-600'}`}>{obra.estado}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}
+
+================================================================================
+FILE: src/app/obras/page.tsx
+================================================================================
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import LogoutButton from '@/components/LogoutButton'
+import EstadoBadge from '@/components/EstadoBadge'
+
+export default async function ObrasPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: obras } = await supabase.from('obras').select('*').eq('carpintero_id', user.id).order('created_at', { ascending: false })
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><span className="text-white font-black text-lg">CJ</span></div>
+              <span className="font-black text-slate-800">CJ Expertos</span>
+            </Link>
+            <span className="text-slate-300">›</span>
+            <span className="text-slate-600 font-semibold">Mis Obras</span>
+          </div>
+          <LogoutButton />
+        </div>
+      </header>
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-black text-slate-800">Todas las obras</h1>
+          <Link href="/obras/nueva" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl transition-colors shadow-sm">+ Nueva obra</Link>
+        </div>
+        {!obras || obras.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
+            <p className="text-4xl mb-4">🏗️</p>
+            <p className="text-slate-400 text-lg mb-6">No tenés obras cargadas todavía</p>
+            <Link href="/obras/nueva" className="inline-block bg-blue-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors">Crear primera obra</Link>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {obras.map(obra => (
+              <Link key={obra.id} href={`/obras/${obra.id}`}
+                className="bg-white rounded-2xl border border-slate-200 p-5 hover:shadow-md transition-shadow flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1 flex-wrap">
+                    <h3 className="font-bold text-slate-800 text-lg">{obra.titulo}</h3>
+                    <EstadoBadge estado={obra.estado} />
+                  </div>
+                  <div className="text-sm text-slate-500 space-y-0.5">
+                    {obra.cliente_nombre && <p>Cliente: {obra.cliente_nombre}</p>}
+                    {obra.cliente_ubicacion && <p>📍 {obra.cliente_ubicacion}</p>}
+                    {obra.ancho_mm && obra.alto_mm && <p>📐 {obra.ancho_mm} × {obra.alto_mm} mm</p>}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  {obra.monto_presupuestado > 0 && <p className="font-black text-slate-700 text-lg">${obra.monto_presupuestado.toLocaleString('es-AR')}</p>}
+                  <p className="text-xs text-slate-400 mt-1">{new Date(obra.created_at).toLocaleDateString('es-AR')}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
+
+================================================================================
+FILE: src/app/obras/nueva/page.tsx
+================================================================================
+'use client'
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+export default function NuevaObraPage() {
+  const router = useRouter()
+  const supabase = createClient()
+  const [titulo, setTitulo] = useState('')
+  const [descripcion, setDescripcion] = useState('')
+  const [clienteNombre, setClienteNombre] = useState('')
+  const [clienteTelefono, setClienteTelefono] = useState('')
+  const [clienteUbicacion, setClienteUbicacion] = useState('')
+  const [anchoMm, setAnchoMm] = useState('')
+  const [altoMm, setAltoMm] = useState('')
+  const [montoPresupuestado, setMontoPresupuestado] = useState('')
+  const [montoAcopiado, setMontoAcopiado] = useState('')
+  const [costoAluminio, setCostoAluminio] = useState('')
+  const [costoVidrio, setCostoVidrio] = useState('')
+  const [costoAccesorios, setCostoAccesorios] = useState('')
+  const [foto, setFoto] = useState<File | null>(null)
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  function handleFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setError('Solo se permiten imágenes (jpg, png, webp).'); return }
+    if (file.size > 10 * 1024 * 1024) { setError('La foto no puede superar 10 MB.'); return }
+    setFoto(file)
+    setFotoPreview(URL.createObjectURL(file))
+    setError('')
+  }
+
+  const presupuesto = parseFloat(montoPresupuestado) || 0
+  const acopio = parseFloat(montoAcopiado) || 0
+  const costos = (parseFloat(costoAluminio) || 0) + (parseFloat(costoVidrio) || 0) + (parseFloat(costoAccesorios) || 0)
+  const puedeMostrarSobrante = acopio > 0 && costos > 0
+  const sobrante = acopio - costos
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    if (!titulo.trim()) { setError('El título de la obra es obligatorio.'); return }
+    if (anchoMm && isNaN(parseInt(anchoMm))) { setError('El ancho debe ser un número en mm.'); return }
+    if (altoMm && isNaN(parseInt(altoMm))) { setError('El alto debe ser un número en mm.'); return }
+    setLoading(true)
+    try {
+      const { data: { user }, error: userErr } = await supabase.auth.getUser()
+      if (userErr || !user) throw new Error('Sesión expirada. Volvé a iniciar sesión.')
+      let fotoUrl: string | null = null
+      if (foto) {
+        const ext = foto.name.split('.').pop() || 'jpg'
+        const filePath = `${user.id}/${Date.now()}.${ext}`
+        const { error: uploadErr } = await supabase.storage.from('fotos-obra').upload(filePath, foto, { contentType: foto.type, upsert: false })
+        if (uploadErr) throw new Error(`Error al subir la foto: ${uploadErr.message}`)
+        const { data: urlData } = supabase.storage.from('fotos-obra').getPublicUrl(filePath)
+        fotoUrl = urlData.publicUrl
+      }
+      const { data: obra, error: insertErr } = await supabase.from('obras').insert({
+        carpintero_id: user.id,
+        titulo: titulo.trim(),
+        descripcion: descripcion.trim() || null,
+        cliente_nombre: clienteNombre.trim() || null,
+        cliente_telefono: clienteTelefono.trim() || null,
+        cliente_ubicacion: clienteUbicacion.trim() || null,
+        ancho_mm: anchoMm ? parseInt(anchoMm) : null,
+        alto_mm: altoMm ? parseInt(altoMm) : null,
+        monto_presupuestado: presupuesto > 0 ? presupuesto : null,
+        monto_acopiado: acopio > 0 ? acopio : null,
+        costo_aluminio: parseFloat(costoAluminio) || null,
+        costo_vidrio: parseFloat(costoVidrio) || null,
+        costo_accesorios: parseFloat(costoAccesorios) || null,
+        foto_url: fotoUrl,
+        estado: 'cotizacion',
+      }).select('id').single()
+      if (insertErr) throw new Error(`Error al guardar la obra: ${insertErr.message}`)
+      router.push(`/obras/${obra.id}`)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error inesperado. Intentá nuevamente.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
+          <Link href="/dashboard" className="text-sm font-semibold text-slate-500 hover:text-blue-600">← Dashboard</Link>
+          <span className="text-slate-300">›</span>
+          <span className="text-slate-700 font-bold">Nueva obra</span>
+        </div>
+      </header>
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-black text-slate-800 mb-6">Crear nueva obra</h1>
+        {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-semibold">{error}</div>}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+            <h2 className="font-bold text-slate-700 text-lg">Información de la obra</h2>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Título *</label>
+              <input type="text" value={titulo} onChange={e => setTitulo(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800" placeholder="Ej: Ventanas depto López" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Descripción</label>
+              <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} rows={3}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 resize-none"
+                placeholder="Detalles de la obra, tipología, observaciones..." />
+            </div>
+          </section>
+          <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+            <h2 className="font-bold text-slate-700 text-lg">Datos del cliente</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Nombre</label>
+                <input type="text" value={clienteNombre} onChange={e => setClienteNombre(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ana García" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Teléfono</label>
+                <input type="tel" value={clienteTelefono} onChange={e => setClienteTelefono(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="341 555-0000" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Dirección / Ubicación</label>
+              <input type="text" value={clienteUbicacion} onChange={e => setClienteUbicacion(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Rosario, Santa Fe" />
+            </div>
+          </section>
+          <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+            <h2 className="font-bold text-slate-700 text-lg">Medidas</h2>
+            <p className="text-sm text-slate-400">Ingresá las medidas en milímetros (mm)</p>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Ancho (mm)</label>
+                <input type="number" inputMode="numeric" value={anchoMm} onChange={e => setAnchoMm(e.target.value)} min={1} max={9999}
+                  className="w-full px-4 py-5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl font-black text-center text-slate-800" placeholder="1500" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Alto (mm)</label>
+                <input type="number" inputMode="numeric" value={altoMm} onChange={e => setAltoMm(e.target.value)} min={1} max={9999}
+                  className="w-full px-4 py-5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl font-black text-center text-slate-800" placeholder="1200" />
+              </div>
+            </div>
+          </section>
+          <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+            <h2 className="font-bold text-slate-700 text-lg">Presupuesto y costos</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Monto presupuestado total ($)</label>
+                <input type="number" inputMode="decimal" value={montoPresupuestado} onChange={e => setMontoPresupuestado(e.target.value)} min={0}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Acopio cobrado al cliente ($) <span className="ml-1 text-orange-500 text-xs font-normal">— valor real</span>
+                </label>
+                <input type="number" inputMode="decimal" value={montoAcopiado} onChange={e => setMontoAcopiado(e.target.value)} min={0}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="0" />
+                <p className="text-xs text-slate-400 mt-1">Dejá en 0 si todavía no cobraste. Se puede completar después.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { label: 'Costo aluminio ($)', val: costoAluminio, set: setCostoAluminio },
+                { label: 'Costo vidrio ($)', val: costoVidrio, set: setCostoVidrio },
+                { label: 'Accesorios ($)', val: costoAccesorios, set: setCostoAccesorios },
+              ].map(f => (
+                <div key={f.label}>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">{f.label}</label>
+                  <input type="number" inputMode="decimal" value={f.val} onChange={e => f.set(e.target.value)} min={0}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" />
+                </div>
+              ))}
+            </div>
+            {puedeMostrarSobrante && (
+              <div className={`rounded-xl p-4 border-2 ${sobrante >= 0 ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-slate-600">Acopio cobrado</span>
+                  <span className="font-bold">${acopio.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span>
+                </div>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm text-slate-600">Costos materiales</span>
+                  <span className="font-bold">${costos.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span>
+                </div>
+                <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
+                  <span className="font-black text-slate-800">{sobrante >= 0 ? '✅ Sobrante' : '⚠️ Déficit'}</span>
+                  <span className={`text-2xl font-black ${sobrante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ${Math.abs(sobrante).toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+                  </span>
+                </div>
+              </div>
+            )}
+            {acopio === 0 && costos > 0 && (
+              <div className="rounded-xl p-3 bg-amber-50 border border-amber-200 text-sm text-amber-700 font-semibold">
+                ⚠ Cargaste costos pero no hay acopio registrado. El sobrante se calculará cuando cargues el monto cobrado.
+              </div>
+            )}
+          </section>
+          <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+            <h2 className="font-bold text-slate-700 text-lg">Foto de la obra</h2>
+            <label className="block cursor-pointer">
+              <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={handleFoto} className="hidden" />
+              {fotoPreview ? (
+                <div className="relative rounded-xl overflow-hidden border border-slate-200">
+                  <img src={fotoPreview} alt="Preview" className="w-full h-56 object-cover" />
+                  <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full font-semibold">Tocá para cambiar</span>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:border-blue-400 transition-colors">
+                  <p className="text-5xl mb-3">📷</p>
+                  <p className="font-semibold text-slate-600">Sacar foto o elegir archivo</p>
+                  <p className="text-sm text-slate-400 mt-1">JPG, PNG, WebP — máx. 10 MB</p>
+                  <p className="text-xs text-slate-400 mt-1">Desde el celular abre la cámara directamente</p>
+                </div>
+              )}
+            </label>
+          </section>
+          <button type="submit" disabled={loading}
+            className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-60 text-white font-black text-lg rounded-2xl shadow-sm transition-colors">
+            {loading ? 'Guardando...' : 'Guardar obra'}
+          </button>
+        </form>
+      </main>
+    </div>
+  )
+}
+
+================================================================================
+FILE: src/app/obras/[id]/page.tsx
+================================================================================
+import { createClient } from '@/lib/supabase/server'
+import { redirect, notFound } from 'next/navigation'
+import Link from 'next/link'
+import EstadoBadge from '@/components/EstadoBadge'
+import CambiarEstado from '@/components/CambiarEstado'
+
+const ESTADOS = ['borrador','cotizacion','acopio','fabricacion','entrega','colocacion','finalizada','cancelada']
+
+export default async function ObraDetallePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: obra } = await supabase.from('obras').select('*').eq('id', id).eq('carpintero_id', user.id).single()
+  if (!obra) notFound()
+
+  const costos = (obra.costo_aluminio || 0) + (obra.costo_vidrio || 0) + (obra.costo_accesorios || 0)
+  const tieneAcopio = obra.monto_acopiado != null && obra.monto_acopiado > 0
+  const sobrante = tieneAcopio ? obra.monto_acopiado - costos : null
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link href="/obras" className="text-sm font-semibold text-slate-500 hover:text-blue-600">← Obras</Link>
+            <span className="text-slate-300">›</span>
+            <span className="text-slate-700 font-bold truncate max-w-48">{obra.titulo}</span>
+          </div>
+          <EstadoBadge estado={obra.estado} />
+        </div>
+      </header>
+      <main className="max-w-3xl mx-auto px-4 py-8 space-y-5">
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-black text-slate-800">{obra.titulo}</h1>
+          <Link href={`/obras/${obra.id}/editar`} className="text-sm font-semibold text-blue-600 hover:underline shrink-0">Editar</Link>
+        </div>
+        {obra.foto_url && (
+          <div className="rounded-2xl overflow-hidden border border-slate-200">
+            <img src={obra.foto_url} alt={obra.titulo} className="w-full h-64 object-cover" />
+          </div>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Cliente</p>
+            <p className="font-bold text-slate-800">{obra.cliente_nombre || '—'}</p>
+            {obra.cliente_telefono && <p className="text-sm text-slate-500 mt-1">📞 {obra.cliente_telefono}</p>}
+            {obra.cliente_ubicacion && <p className="text-sm text-slate-500 mt-1">📍 {obra.cliente_ubicacion}</p>}
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Medidas</p>
+            {obra.ancho_mm && obra.alto_mm ? (
+              <p className="text-3xl font-black text-slate-800">{obra.ancho_mm} × {obra.alto_mm} <span className="text-base font-normal text-slate-400">mm</span></p>
+            ) : (
+              <p className="text-slate-400 text-sm">Sin medidas cargadas aún</p>
+            )}
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-4">Financiero</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+            <div className="text-center">
+              <p className="text-xs text-slate-400 mb-1">Presupuesto total</p>
+              <p className="font-black text-lg text-slate-700">
+                {obra.monto_presupuestado ? `$${obra.monto_presupuestado.toLocaleString('es-AR', { maximumFractionDigits: 0 })}` : <span className="text-slate-300 text-sm">No cargado</span>}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-slate-400 mb-1">Acopio cobrado (real)</p>
+              <p className="font-black text-lg text-orange-600">
+                {tieneAcopio ? `$${obra.monto_acopiado.toLocaleString('es-AR', { maximumFractionDigits: 0 })}` : <span className="text-amber-500 text-sm font-bold">⚠ Falta cargar</span>}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-slate-400 mb-1">Costos materiales</p>
+              <p className="font-black text-lg text-red-600">
+                {costos > 0 ? `$${costos.toLocaleString('es-AR', { maximumFractionDigits: 0 })}` : <span className="text-slate-300 text-sm">No cargados</span>}
+              </p>
+            </div>
+          </div>
+          {sobrante !== null && costos > 0 ? (
+            <div className={`rounded-xl p-4 border-2 ${sobrante >= 0 ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
+              <div className="flex justify-between items-center">
+                <span className="font-black text-slate-700">{sobrante >= 0 ? '✅ Sobrante en caja' : '⚠️ Déficit — revisar presupuesto'}</span>
+                <span className={`text-2xl font-black ${sobrante >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${Math.abs(sobrante).toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                Sobrante = acopio cobrado (${obra.monto_acopiado.toLocaleString('es-AR', { maximumFractionDigits: 0 })}) − costos materiales (${costos.toLocaleString('es-AR', { maximumFractionDigits: 0 })})
+              </p>
+            </div>
+          ) : !tieneAcopio && costos > 0 ? (
+            <div className="rounded-xl p-4 bg-amber-50 border-2 border-amber-200">
+              <p className="font-bold text-amber-700 text-sm">⚠ Para calcular el sobrante necesitás cargar el monto de acopio real cobrado al cliente.</p>
+            </div>
+          ) : null}
+          {costos > 0 && (
+            <div className="bg-slate-50 rounded-xl p-3 text-sm mt-3 space-y-1">
+              {obra.costo_aluminio > 0 && <div className="flex justify-between text-slate-600"><span>Aluminio</span><span>${obra.costo_aluminio.toLocaleString('es-AR')}</span></div>}
+              {obra.costo_vidrio > 0 && <div className="flex justify-between text-slate-600"><span>Vidrio</span><span>${obra.costo_vidrio.toLocaleString('es-AR')}</span></div>}
+              {obra.costo_accesorios > 0 && <div className="flex justify-between text-slate-600"><span>Accesorios</span><span>${obra.costo_accesorios.toLocaleString('es-AR')}</span></div>}
+            </div>
+          )}
+        </div>
+        {obra.descripcion && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Descripción</p>
+            <p className="text-slate-700 whitespace-pre-wrap">{obra.descripcion}</p>
+          </div>
+        )}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Estado de la obra</p>
+          <CambiarEstado obraId={obra.id} estadoActual={obra.estado} estados={ESTADOS} />
+        </div>
+        <p className="text-xs text-slate-400 text-center">Creada: {new Date(obra.created_at).toLocaleDateString('es-AR')} · ID: {obra.id.slice(0,8)}</p>
+      </main>
+    </div>
+  )
+}
+
+================================================================================
+FILE: src/app/perfil/page.tsx
+================================================================================
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import EditarPerfilForm from '@/components/EditarPerfilForm'
+import RangoBadge from '@/components/RangoBadge'
+
+export default async function PerfilPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: perfil } = await supabase.from('perfiles').select('*').eq('id', user.id).single()
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-2">
+          <Link href="/dashboard" className="text-sm font-semibold text-slate-500 hover:text-blue-600">← Dashboard</Link>
+          <span className="text-slate-300">›</span>
+          <span className="text-slate-700 font-bold">Mi perfil</span>
+        </div>
+      </header>
+      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center">
+            <span className="text-2xl font-black text-blue-600">{(perfil?.nombre || user.email || '?')[0].toUpperCase()}</span>
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-800">{perfil?.nombre || 'Sin nombre'}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <RangoBadge rango={perfil?.rango || 'estrella_1'} />
+              <span className="text-sm text-slate-400">{perfil?.puntos || 0} puntos</span>
+            </div>
+          </div>
+        </div>
+        <EditarPerfilForm perfil={perfil} userId={user.id} />
+      </main>
+    </div>
+  )
+}
+
+================================================================================
+FILE: src/components/LogoutButton.tsx
+================================================================================
+'use client'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+
+export default function LogoutButton() {
+  const router = useRouter()
+  const supabase = createClient()
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
+
+  return (
+    <button onClick={handleLogout}
+      className="text-sm font-semibold text-slate-500 hover:text-red-600 transition-colors px-3 py-2 rounded-lg hover:bg-red-50">
+      Cerrar sesión
+    </button>
+  )
+}
+
+================================================================================
+FILE: src/components/RangoBadge.tsx
+================================================================================
+const RANGOS: Record<string, { label: string; color: string }> = {
+  estrella_1: { label: '⭐ Novato',      color: 'bg-slate-100 text-slate-600' },
+  estrella_2: { label: '⭐⭐ Aprendiz',  color: 'bg-slate-100 text-slate-600' },
+  estrella_3: { label: '⭐⭐⭐ Oficial', color: 'bg-yellow-50 text-yellow-700' },
+  estrella_4: { label: '⭐×4 Experto',   color: 'bg-yellow-100 text-yellow-700' },
+  estrella_5: { label: '⭐×5 Maestro',   color: 'bg-amber-100 text-amber-700' },
+  zafiro:     { label: '💎 Zafiro',      color: 'bg-blue-100 text-blue-700' },
+  rubi:       { label: '❤️ Rubí',        color: 'bg-red-100 text-red-700' },
+  esmeralda:  { label: '💚 Esmeralda',   color: 'bg-green-100 text-green-700' },
+  diamante:   { label: '💠 Diamante',    color: 'bg-purple-100 text-purple-800 ring-2 ring-purple-400' },
+}
+
+export default function RangoBadge({ rango }: { rango: string }) {
+  const r = RANGOS[rango] || RANGOS['estrella_1']
+  return <span className={`text-xs font-bold px-3 py-1 rounded-full ${r.color}`}>{r.label}</span>
+}
+
+================================================================================
+FILE: src/components/EstadoBadge.tsx
+================================================================================
+const ESTADOS: Record<string, { label: string; color: string }> = {
+  borrador:    { label: 'Borrador',    color: 'bg-slate-100 text-slate-600' },
+  cotizacion:  { label: 'Cotización',  color: 'bg-yellow-100 text-yellow-700' },
+  acopio:      { label: 'Acopio',      color: 'bg-orange-100 text-orange-700' },
+  fabricacion: { label: 'Fabricación', color: 'bg-blue-100 text-blue-700' },
+  entrega:     { label: 'Entrega',     color: 'bg-purple-100 text-purple-700' },
+  colocacion:  { label: 'Colocación',  color: 'bg-indigo-100 text-indigo-700' },
+  finalizada:  { label: 'Finalizada',  color: 'bg-green-100 text-green-700' },
+  cancelada:   { label: 'Cancelada',   color: 'bg-red-100 text-red-700' },
+}
+
+export default function EstadoBadge({ estado }: { estado: string }) {
+  const e = ESTADOS[estado] || { label: estado, color: 'bg-slate-100 text-slate-600' }
+  return <span className={`text-xs font-bold px-3 py-1 rounded-full ${e.color}`}>{e.label}</span>
+}
+
+================================================================================
+FILE: src/components/CambiarEstado.tsx
+================================================================================
+'use client'
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+
+const LABELS: Record<string, string> = {
+  borrador:'Borrador', cotizacion:'Cotización', acopio:'Acopio',
+  fabricacion:'Fabricación', entrega:'Entrega', colocacion:'Colocación',
+  finalizada:'Finalizada', cancelada:'Cancelada',
+}
+
+export default function CambiarEstado({ obraId, estadoActual, estados }: { obraId: string; estadoActual: string; estados: string[] }) {
+  const [estado, setEstado] = useState(estadoActual)
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState('')
+  const supabase = createClient()
+  const router = useRouter()
+
+  async function guardar() {
+    setLoading(true); setMsg('')
+    const { error } = await supabase.from('obras').update({ estado }).eq('id', obraId)
+    setLoading(false)
+    if (error) { setMsg('Error al actualizar.'); return }
+    setMsg('Estado actualizado.')
+    router.refresh()
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {estados.map(e => (
+          <button key={e} onClick={() => setEstado(e)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors border ${estado === e ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+            {LABELS[e] || e}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-3">
+        <button onClick={guardar} disabled={loading || estado === estadoActual}
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold px-5 py-2.5 rounded-xl transition-colors text-sm">
+          {loading ? 'Guardando...' : 'Guardar cambio'}
+        </button>
+        {msg && <span className="text-sm font-semibold text-green-600">{msg}</span>}
+      </div>
+    </div>
+  )
+}
+
+================================================================================
+FILE: src/components/EditarPerfilForm.tsx
+================================================================================
+'use client'
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+
+type Perfil = { nombre?: string; empresa?: string; telefono?: string; ciudad?: string; provincia?: string }
+
+export default function EditarPerfilForm({ perfil, userId }: { perfil: Perfil | null; userId: string }) {
+  const supabase = createClient()
+  const router = useRouter()
+  const [nombre, setNombre] = useState(perfil?.nombre || '')
+  const [empresa, setEmpresa] = useState(perfil?.empresa || '')
+  const [telefono, setTelefono] = useState(perfil?.telefono || '')
+  const [ciudad, setCiudad] = useState(perfil?.ciudad || '')
+  const [provincia, setProvincia] = useState(perfil?.provincia || '')
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [error, setError] = useState('')
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault(); setMsg(''); setError('')
+    if (!nombre) { setError('El nombre es obligatorio.'); return }
+    setLoading(true)
+    const { error: err } = await supabase.from('perfiles').upsert({ id: userId, nombre, empresa: empresa || null, telefono: telefono || null, ciudad: ciudad || null, provincia: provincia || null })
+    setLoading(false)
+    if (err) { setError(err.message); return }
+    setMsg('Perfil actualizado correctamente.')
+    router.refresh()
+  }
+
+  return (
+    <form onSubmit={handleSave} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+      <h2 className="font-bold text-slate-700 text-lg">Editar datos</h2>
+      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
+      {msg && <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">{msg}</div>}
+      {[
+        { label: 'Nombre *', value: nombre, set: setNombre, placeholder: 'Juan García' },
+        { label: 'Taller / Empresa', value: empresa, set: setEmpresa, placeholder: 'García Aberturas' },
+        { label: 'Teléfono', value: telefono, set: setTelefono, placeholder: '341 555-0000' },
+        { label: 'Ciudad', value: ciudad, set: setCiudad, placeholder: 'Rosario' },
+        { label: 'Provincia', value: provincia, set: setProvincia, placeholder: 'Santa Fe' },
+      ].map(f => (
+        <div key={f.label}>
+          <label className="block text-sm font-semibold text-slate-700 mb-1">{f.label}</label>
+          <input type="text" value={f.value} onChange={e => f.set(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800"
+            placeholder={f.placeholder} />
+        </div>
+      ))}
+      <button type="submit" disabled={loading}
+        className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl transition-colors">
+        {loading ? 'Guardando...' : 'Guardar cambios'}
+      </button>
+    </form>
+  )
+}
+
+================================================================================
+FILE: src/lib/supabase/client.ts
+================================================================================
+import { createBrowserClient } from '@supabase/ssr'
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+
+================================================================================
+FILE: src/lib/supabase/server.ts
+================================================================================
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export async function createClient() {
+  const cookieStore = await cookies()
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+          } catch {}
+        },
+      },
+    }
+  )
+}
+
+================================================================================
+FILE: src/lib/supabase/middleware.ts
+================================================================================
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const isPublic = ['/login', '/register', '/'].some(p =>
+    request.nextUrl.pathname === p || request.nextUrl.pathname.startsWith(p + '?')
+  )
+
+  if (!user && !isPublic) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  return supabaseResponse
+}
+
+================================================================================
+FILE: supabase_schema.sql
+================================================================================
+-- CJ EXPERTOS — SQL completo para Supabase
+-- Ejecutar en: Supabase → SQL Editor → New query
+
+create table if not exists public.perfiles (
+  id              uuid primary key references auth.users(id) on delete cascade,
+  nombre          text not null,
+  empresa         text,
+  email           text,
+  telefono        text,
+  ciudad          text,
+  provincia       text,
+  rol             text not null default 'carpintero',
+  rango           text not null default 'estrella_1',
+  puntos          int  not null default 0,
+  saldo_billetera numeric(12,2) not null default 0,
+  avatar_url      text,
+  activo          boolean not null default true,
+  created_at      timestamptz not null default now()
+);
+
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.perfiles (id, nombre, email)
+  values (new.id, coalesce(new.raw_user_meta_data->>'nombre', split_part(new.email, '@', 1)), new.email);
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+create table if not exists public.obras (
+  id                   uuid primary key default gen_random_uuid(),
+  carpintero_id        uuid not null references public.perfiles(id) on delete cascade,
+  titulo               text not null,
+  descripcion          text,
+  cliente_nombre       text,
+  cliente_telefono     text,
+  cliente_ubicacion    text,
+  ancho_mm             int,
+  alto_mm              int,
+  monto_presupuestado  numeric(12,2) default 0,
+  monto_acopiado       numeric(12,2) default 0,
+  costo_aluminio       numeric(12,2) default 0,
+  costo_vidrio         numeric(12,2) default 0,
+  costo_accesorios     numeric(12,2) default 0,
+  estado               text not null default 'borrador',
+  foto_url             text,
+  comision_pct         numeric(5,2) default 5,
+  created_at           timestamptz not null default now(),
+  updated_at           timestamptz not null default now()
+);
+
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$ begin new.updated_at = now(); return new; end; $$;
+
+create trigger obras_updated_at before update on public.obras
+  for each row execute function public.set_updated_at();
+
+create table if not exists public.movimientos (
+  id          uuid primary key default gen_random_uuid(),
+  perfil_id   uuid not null references public.perfiles(id) on delete cascade,
+  obra_id     uuid references public.obras(id),
+  tipo        text not null,
+  monto       numeric(12,2) not null,
+  descripcion text,
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists public.fotos_obra (
+  id         uuid primary key default gen_random_uuid(),
+  obra_id    uuid not null references public.obras(id) on delete cascade,
+  url        text not null,
+  etapa      text,
+  nota       text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.perfiles enable row level security;
+alter table public.obras enable row level security;
+alter table public.movimientos enable row level security;
+alter table public.fotos_obra enable row level security;
+
+create policy "perfil_select" on public.perfiles for select using (auth.uid() = id);
+create policy "perfil_update" on public.perfiles for update using (auth.uid() = id);
+create policy "perfil_insert" on public.perfiles for insert with check (auth.uid() = id);
+
+create policy "obras_select" on public.obras for select using (auth.uid() = carpintero_id);
+create policy "obras_insert" on public.obras for insert with check (auth.uid() = carpintero_id);
+create policy "obras_update" on public.obras for update using (auth.uid() = carpintero_id);
+create policy "obras_delete" on public.obras for delete using (auth.uid() = carpintero_id);
+
+create policy "mov_select" on public.movimientos for select using (auth.uid() = perfil_id);
+
+create policy "fotos_select" on public.fotos_obra for select using (
+  exists (select 1 from public.obras where id = fotos_obra.obra_id and carpintero_id = auth.uid())
+);
+create policy "fotos_insert" on public.fotos_obra for insert with check (
+  exists (select 1 from public.obras where id = fotos_obra.obra_id and carpintero_id = auth.uid())
+);
+
+-- STORAGE (ejecutar por separado en Supabase SQL Editor):
+-- insert into storage.buckets (id, name, public) values ('fotos-obra', 'fotos-obra', true);
+-- create policy "storage_upload" on storage.objects for insert with check (bucket_id = 'fotos-obra' and auth.role() = 'authenticated');
+-- create policy "storage_select" on storage.objects for select using (bucket_id = 'fotos-obra');
+
+================================================================================
+FIN DEL ARCHIVO
+================================================================================
+Total archivos: 23
+Rutas protegidas: /dashboard, /obras/*, /perfil
+Rutas públicas: /, /login, /register
+TypeScript: 0 errores (verificado con tsc --noEmit)
+================================================================================

@@ -50,7 +50,6 @@ export default function NuevaLicitacionPage() {
   const [licitacionCreada, setLicitacionCreada] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Role guard: redirect non-clients after loading completes
   useEffect(() => {
     if (!loading && (!profile || profile.rol !== 'cliente')) {
       router.replace('/licitaciones')
@@ -91,7 +90,6 @@ export default function NuevaLicitacionPage() {
     setError('')
 
     try {
-      // Para imágenes: resize con canvas
       let uploadFile: File | Blob = file
       if (file.type.startsWith('image/')) {
         uploadFile = await resizeImagen(file)
@@ -170,7 +168,6 @@ export default function NuevaLicitacionPage() {
       return
     }
 
-    // Notificar a los carpinteros invitados
     if (form.carpinterosSeleccionados.length > 0) {
       await supabase.from('notificaciones').insert(
         form.carpinterosSeleccionados.map(carpId => ({
@@ -187,13 +184,18 @@ export default function NuevaLicitacionPage() {
     setCreando(false)
   }
 
-  // While loading or unauthorized: show spinner (useEffect handles redirect)
-  if (loading || !profile || profile.rol !== 'cliente') {
+  // Mientras carga: spinner temporal
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
       </div>
     )
+  }
+
+  // Si no es cliente: el useEffect ya redirige, no mostramos nada
+  if (!profile || profile.rol !== 'cliente') {
+    return null
   }
 
   if (licitacionCreada) {
@@ -228,7 +230,6 @@ export default function NuevaLicitacionPage() {
   return (
     <AppShell perfil={profile} pageTitle="Nueva Licitación">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Progress steps */}
         <div className="flex items-center gap-0">
           {STEPS.map((label, idx) => (
             <div key={idx} className="flex items-center flex-1">
@@ -255,7 +256,6 @@ export default function NuevaLicitacionPage() {
           <p className="text-sm text-[var(--danger)] bg-red-50 rounded-xl px-4 py-3">{error}</p>
         )}
 
-        {/* Step 0: Datos */}
         {step === 0 && (
           <Card>
             <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">
@@ -307,7 +307,6 @@ export default function NuevaLicitacionPage() {
           </Card>
         )}
 
-        {/* Step 1: Plano */}
         {step === 1 && (
           <Card>
             <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">
@@ -362,7 +361,6 @@ export default function NuevaLicitacionPage() {
           </Card>
         )}
 
-        {/* Step 2: Carpinteros */}
         {step === 2 && (
           <Card>
             <div className="flex items-center justify-between mb-5">
@@ -423,7 +421,6 @@ export default function NuevaLicitacionPage() {
           </Card>
         )}
 
-        {/* Step 3: Confirmar */}
         {step === 3 && (
           <Card>
             <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">
@@ -458,7 +455,6 @@ export default function NuevaLicitacionPage() {
           </Card>
         )}
 
-        {/* Navegación */}
         <div className="flex justify-between items-center">
           {step > 0 ? (
             <Button variant="outline" onClick={handleBack}>

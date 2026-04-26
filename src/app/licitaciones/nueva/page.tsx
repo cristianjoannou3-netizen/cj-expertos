@@ -13,9 +13,9 @@ import type { Perfil } from '@/types/perfil'
 const STEPS = ['Datos de la obra', 'Plano', 'Carpinteros', 'Confirmar']
 
 const TIPO_SERVICIO = [
-  { value: 'solo_fabricacion', label: 'Solo fabricación', desc: 'Yo retiro y coloco', Icon: Factory },
+  { value: 'solo_fabricacion', label: 'Solo fabricacion', desc: 'Yo retiro y coloco', Icon: Factory },
   { value: 'entrega', label: 'Con entrega', desc: 'Entrega a domicilio, yo coloco', Icon: Truck },
-  { value: 'colocacion', label: 'Entrega + colocación', desc: 'Fabricación, entrega e instalación', Icon: Wrench },
+  { value: 'colocacion', label: 'Entrega + colocacion', desc: 'Fabricacion, entrega e instalacion', Icon: Wrench },
 ]
 
 interface FormData {
@@ -50,8 +50,16 @@ export default function NuevaLicitacionPage() {
   const [licitacionCreada, setLicitacionCreada] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // FIX: Solo redirigimos cuando loading=false Y tenemos certeza de que
+  // el usuario no es cliente. Nunca redirigimos si profile es null durante carga.
   useEffect(() => {
-    if (!loading && (!profile || profile.rol !== 'cliente')) {
+    if (loading) return // Esperar a que termine de cargar
+    if (!profile) {
+      // Sin perfil después de cargar = no autenticado
+      router.replace('/login')
+      return
+    }
+    if (profile.rol !== 'cliente') {
       router.replace('/licitaciones')
     }
   }, [loading, profile, router])
@@ -77,7 +85,7 @@ export default function NuevaLicitacionPage() {
   }
 
   const handleNext = () => {
-    if (step === 2) loadCarpinteros()
+    if (step === 1) loadCarpinteros()
     if (step < STEPS.length - 1) setStep(s => s + 1)
   }
 
@@ -88,25 +96,20 @@ export default function NuevaLicitacionPage() {
     if (!file) return
     setUploading(true)
     setError('')
-
     try {
       let uploadFile: File | Blob = file
       if (file.type.startsWith('image/')) {
         uploadFile = await resizeImagen(file)
       }
-
       const ext = file.name.split('.').pop() ?? 'jpg'
       const path = `${profile?.id ?? 'anon'}/${Date.now()}.${ext}`
       const { error: uploadErr } = await supabase.storage
         .from('planos-licitacion')
         .upload(path, uploadFile, { contentType: file.type })
-
       if (uploadErr) throw uploadErr
-
       const { data: { publicUrl } } = supabase.storage
         .from('planos-licitacion')
         .getPublicUrl(path)
-
       setForm(f => ({ ...f, planoUrl: publicUrl, planoNombre: file.name }))
     } catch (err) {
       setError((err as Error).message)
@@ -126,9 +129,12 @@ export default function NuevaLicitacionPage() {
         canvas.height = img.height * ratio
         canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height)
         URL.revokeObjectURL(url)
-        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Error al redimensionar')), 'image/jpeg', 0.7)
+        canvas.toBlob(
+          blob => blob ? resolve(blob) : reject(new Error('Error al redimensionar')),
+          'image/jpeg', 0.7
+        )
       }
-      img.onerror = () => reject(new Error('Imagen inválida'))
+      img.onerror = () => reject(new Error('Imagen invalida'))
       img.src = url
     })
 
@@ -145,9 +151,7 @@ export default function NuevaLicitacionPage() {
     if (!profile) return
     setCreando(true)
     setError('')
-
     const venceEn = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
-
     const { data: lic, error: licErr } = await supabase
       .from('licitaciones')
       .insert({
@@ -161,30 +165,27 @@ export default function NuevaLicitacionPage() {
       })
       .select()
       .single()
-
     if (licErr || !lic) {
-      setError(licErr?.message ?? 'Error al crear licitación')
+      setError(licErr?.message ?? 'Error al crear licitacion')
       setCreando(false)
       return
     }
-
     if (form.carpinterosSeleccionados.length > 0) {
       await supabase.from('notificaciones').insert(
         form.carpinterosSeleccionados.map(carpId => ({
           usuario_id: carpId,
           tipo: 'cotizacion',
-          titulo: 'Nueva licitación disponible',
-          mensaje: `Te invitaron a cotizar: "${form.titulo.trim()}". Tenés 48 horas.`,
+          titulo: 'Nueva licitacion disponible',
+          mensaje: `Te invitaron a cotizar: "${form.titulo.trim()}". Tenes 48 horas.`,
           link: `/licitaciones/${lic.id}`,
         }))
       )
     }
-
     setLicitacionCreada(lic.id)
     setCreando(false)
   }
 
-  // Mientras carga: spinner temporal
+  // FIX: Spinner mientras carga - nunca infinito
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -193,28 +194,28 @@ export default function NuevaLicitacionPage() {
     )
   }
 
-  // Si no es cliente: el useEffect ya redirige, no mostramos nada
+  // Si no es cliente, el useEffect ya redirige
   if (!profile || profile.rol !== 'cliente') {
     return null
   }
 
   if (licitacionCreada) {
     return (
-      <AppShell perfil={profile} pageTitle="Nueva Licitación">
+      <AppShell perfil={profile} pageTitle="Nueva Licitacion">
         <div className="max-w-lg mx-auto">
           <Card>
             <div className="text-center space-y-4 py-4">
               <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto">
                 <CheckCircle size={36} className="text-[var(--success)]" />
               </div>
-              <h2 className="text-2xl font-black text-slate-800">¡Licitación publicada!</h2>
+              <h2 className="text-2xl font-black text-slate-800">Licitacion publicada!</h2>
               <p className="text-slate-500 text-sm">
-                Se invitó a <strong>{form.carpinterosSeleccionados.length} carpintero(s)</strong>.
-                Tienen <strong>48 horas</strong> para enviar su cotización.
+                Se invito a <strong>{form.carpinterosSeleccionados.length} carpintero(s)</strong>.
+                Tienen <strong>48 horas</strong> para enviar su cotizacion.
               </p>
               <div className="flex gap-3 justify-center pt-2">
                 <Button onClick={() => router.push(`/licitaciones/${licitacionCreada}`)}>
-                  Ver licitación
+                  Ver licitacion
                 </Button>
                 <Button variant="outline" onClick={() => router.push('/licitaciones')}>
                   Mis licitaciones
@@ -228,16 +229,19 @@ export default function NuevaLicitacionPage() {
   }
 
   return (
-    <AppShell perfil={profile} pageTitle="Nueva Licitación">
+    <AppShell perfil={profile} pageTitle="Nueva Licitacion">
       <div className="max-w-2xl mx-auto space-y-6">
+        {/* Steps indicator */}
         <div className="flex items-center gap-0">
           {STEPS.map((label, idx) => (
             <div key={idx} className="flex items-center flex-1">
               <div className="flex flex-col items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                  idx < step ? 'bg-[var(--success)] text-white' :
-                  idx === step ? 'bg-[var(--primary)] text-white' :
-                  'bg-slate-100 text-slate-400'
+                  idx < step
+                    ? 'bg-[var(--success)] text-white'
+                    : idx === step
+                    ? 'bg-[var(--primary)] text-white'
+                    : 'bg-slate-100 text-slate-400'
                 }`}>
                   {idx < step ? <CheckCircle size={14} /> : idx + 1}
                 </div>
@@ -256,6 +260,7 @@ export default function NuevaLicitacionPage() {
           <p className="text-sm text-[var(--danger)] bg-red-50 rounded-xl px-4 py-3">{error}</p>
         )}
 
+        {/* Step 0: Datos */}
         {step === 0 && (
           <Card>
             <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">
@@ -263,14 +268,14 @@ export default function NuevaLicitacionPage() {
             </h2>
             <div className="space-y-4">
               <Input
-                label="Título *"
+                label="Titulo *"
                 value={form.titulo}
                 onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
                 placeholder="Ej: Ventanas edificio 3er piso — 12 unidades"
               />
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                  Descripción / especificaciones
+                  Descripcion / especificaciones
                 </label>
                 <textarea
                   value={form.descripcion}
@@ -307,6 +312,7 @@ export default function NuevaLicitacionPage() {
           </Card>
         )}
 
+        {/* Step 1: Plano */}
         {step === 1 && (
           <Card>
             <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">
@@ -346,21 +352,16 @@ export default function NuevaLicitacionPage() {
                   <>
                     <Upload size={24} />
                     <span className="text-sm font-semibold">Subir plano</span>
-                    <span className="text-xs text-slate-400">JPG, PNG o PDF — máx. 5MB</span>
+                    <span className="text-xs text-slate-400">JPG, PNG o PDF — max. 5MB</span>
                   </>
                 )}
               </button>
             )}
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*,.pdf"
-              onChange={handlePlano}
-              className="hidden"
-            />
+            <input ref={fileRef} type="file" accept="image/*,.pdf" onChange={handlePlano} className="hidden" />
           </Card>
         )}
 
+        {/* Step 2: Carpinteros */}
         {step === 2 && (
           <Card>
             <div className="flex items-center justify-between mb-5">
@@ -375,7 +376,6 @@ export default function NuevaLicitacionPage() {
                 {form.carpinterosSeleccionados.length} seleccionado(s)
               </span>
             </div>
-
             {loadingCarpinteros ? (
               <p className="text-slate-400 text-sm text-center py-8">Cargando carpinteros...</p>
             ) : (
@@ -402,12 +402,12 @@ export default function NuevaLicitacionPage() {
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-semibold text-slate-800 truncate">{c.nombre}</p>
                         {c.verificado && (
-                          <span className="text-xs text-[var(--primary)] bg-[var(--surface)] border border-sky-100 px-1.5 rounded-full shrink-0">✓</span>
+                          <span className="text-xs text-[var(--primary)] bg-[var(--surface)] border border-sky-100 px-1.5 rounded-full shrink-0">V</span>
                         )}
                       </div>
                       <p className="text-xs text-slate-400">
                         {c.ciudad && `${c.ciudad} · `}
-                        {c.m2_taller && `${c.m2_taller}m² · `}
+                        {c.m2_taller && `${c.m2_taller}m2 · `}
                         {c.experiencia && `${c.experiencia} años exp.`}
                       </p>
                     </div>
@@ -421,14 +421,15 @@ export default function NuevaLicitacionPage() {
           </Card>
         )}
 
+        {/* Step 3: Confirmar */}
         {step === 3 && (
           <Card>
             <h2 className="font-bold text-slate-700 text-sm uppercase tracking-wider mb-5">
-              Confirmar licitación
+              Confirmar licitacion
             </h2>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between border-b border-slate-100 pb-3">
-                <span className="text-slate-500">Título</span>
+                <span className="text-slate-500">Titulo</span>
                 <span className="font-semibold text-slate-800 text-right max-w-[60%]">{form.titulo}</span>
               </div>
               <div className="flex justify-between border-b border-slate-100 pb-3">
@@ -455,22 +456,20 @@ export default function NuevaLicitacionPage() {
           </Card>
         )}
 
+        {/* Navigation */}
         <div className="flex justify-between items-center">
           {step > 0 ? (
             <Button variant="outline" onClick={handleBack}>
               <ArrowLeft size={15} /> Anterior
             </Button>
-          ) : (
-            <div />
-          )}
-
+          ) : <div />}
           {step < STEPS.length - 1 ? (
             <Button onClick={handleNext} disabled={!canNext[step]()}>
               Siguiente <ArrowRight size={15} />
             </Button>
           ) : (
             <Button onClick={handleCrear} loading={creando}>
-              Publicar licitación
+              Publicar licitacion
             </Button>
           )}
         </div>

@@ -202,23 +202,20 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  // Fetch perfil and obras in parallel — obras query uses carpintero_id filter so safe to run eagerly
+  const [perfilRes, obrasRes] = await Promise.all([
+    supabase.from('perfiles').select('*').eq('id', user.id).single(),
+    supabase
+      .from('obras')
+      .select('id, titulo, estado, cliente_nombre, created_at, monto_presupuestado')
+      .eq('carpintero_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ])
 
+  const perfil = perfilRes.data as Perfil | null
   const rol = perfil?.rol ?? 'carpintero'
-
-  const obras: Obra[] = rol === 'carpintero'
-    ? ((await supabase
-        .from('obras')
-        .select('id, titulo, estado, cliente_nombre, created_at, monto_presupuestado')
-        .eq('carpintero_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10)
-      ).data ?? [])
-    : []
+  const obras: Obra[] = rol === 'carpintero' ? (obrasRes.data ?? []) : []
 
   function renderContent() {
     if (!perfil) return <p className="text-slate-500">No se encontró el perfil.</p>
